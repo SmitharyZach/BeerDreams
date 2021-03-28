@@ -8,10 +8,15 @@ const debug = false;
 const clientId = process.env.CLIENTID;
 const clientSecret = process.env.CLIENTSECRET;
 const untappd = new UntappdClient(debug);
+const { DateTime } = require("luxon");
+
 
 export default function Dashboard({ code }) {
   const accessToken = useAuth(code);
   const [username, setUsername] = useState("");
+  const [oneYear, setOneYear] = useState(false)
+  const [twoYear, setTwoYear] = useState(false)
+  const [threeYear, setThreeYear] = useState(false)
   const [checkins, setCheckins] = useState([]);
   var allCheckins = [];
   untappd.setAccessToken(accessToken);
@@ -61,10 +66,57 @@ export default function Dashboard({ code }) {
     if (!accessToken) return;
     getAllCheckins();
   }, [accessToken]);
-  //map over beer here and pass in to Beer list, don't map in beerlist
+
+  const changeOneYearState = () => {
+    if (oneYear) {
+      setOneYear(false)
+    } else {
+      setOneYear(true)
+    }
+  }
+  const changeTwoYearState = () => {
+    if (twoYear) {
+      setTwoYear(false)
+    } else {
+      setTwoYear(true)
+    }
+  }
+  const ChangeThreeYearState = () => {
+    if (threeYear) {
+      setThreeYear(false)
+    } else {
+      setThreeYear(true)
+    }
+  }
+
+  const getPastDate = (years) => {
+    let date = DateTime.local()
+      .setZone("America/New_York")
+      .minus({ years: years })
+      .toFormat("ccc, dd LLL yyyy");
+    return date;
+  };
+
+  const filterByYear = (years) => {
+    const date = getPastDate(years)
+    console.log(date)
+    const filteredCheckins = checkins.filter(checkin => checkin.created_at.includes(date))
+    if (filteredCheckins.length === 0) {
+      return <p>no beers this day!</p>
+    }
+    return filteredCheckins.map((checkin) => (
+      <Checkin key={checkin.checkin_id} checkin={checkin} />
+    ))
+  }
   return (
     <div>
       <h1>Welcome {username}</h1>
+      <button onClick={changeOneYearState}>1 Year Ago Today</button>
+      {oneYear && filterByYear(1)}
+      <button onClick={changeTwoYearState}>2 Years Ago Today</button>
+      {twoYear && filterByYear(2)}
+      <button onClick={ChangeThreeYearState}>3 Year Ago Today</button>
+      {threeYear && filterByYear(3)}
       <div>
         {checkins.map((checkin) => (
           <Checkin key={checkin.checkin_id} checkin={checkin} />
